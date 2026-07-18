@@ -6,9 +6,9 @@
 
 #define FPS_TARGET		60
 
-#define WORK_DURATION		25 * 60
-#define SHORT_BREAK_DURATION	5 * 60
-#define LONG_BREAK_DURATION	30 * 60
+#define WORK_MINUTES		25
+#define SHORT_BREAK_MINUTES	5
+#define LONG_BREAK_MINUTES	30
 
 /*
  * set timer, reset timer, short break, long break
@@ -25,9 +25,9 @@
 
 // Durations for Work, Short Break, Long Break
 const int interval_s[3] = {
-	WORK_DURATION,
-	SHORT_BREAK_DURATION,
-	LONG_BREAK_DURATION
+	WORK_MINUTES * 60,
+	SHORT_BREAK_MINUTES * 60,
+	LONG_BREAK_MINUTES * 60
 };
 
 enum phase
@@ -94,9 +94,14 @@ update_timer (timer* t, float ds)
 		if (t->phase == work)
 		{
 			if (t->work_count && t->work_count % 4 == 0)
+			{
 				t->phase = long_break;
+			}
 			else
+			{
 				t->phase = short_break;
+			}
+			
 			++t->work_count;
 		}
 		else
@@ -134,22 +139,22 @@ main (void)
 
 	while (!WindowShouldClose())
 	{
-		BeginDrawing();
-
-		ClearBackground(RAYWHITE);
-
 		char s[32];
 		sprintf(s, 
 			"phase: %d - %.3f / %d",
 			t->phase,
 			t->current_time_s,
 			t->total_time_s);
+
+		BeginDrawing();
+
+		ClearBackground(RAYWHITE);
 		DrawText(s, 10, 10, 20, BLACK);
 
+		EndDrawing();
+		
 		if (t->running)
 			update_timer(t, GetFrameTime());
-
-		EndDrawing();
 	}
 
 	CloseWindow();
