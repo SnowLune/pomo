@@ -119,9 +119,11 @@ stop_timer (timer* t)
 }
 
 void
-set_timer (int s, timer* t)
+set_timer (timer* t, phase phase, float time)
 {
-	t->total_time_s = s;
+	t->phase = phase;
+	t->total_time_s = interval_s[t->phase];
+	t->current_time_s = time;
 }
 
 int
@@ -139,19 +141,21 @@ main (void)
 
 	while (!WindowShouldClose())
 	{
-		char s[32];
-		sprintf(s, 
+		const char* status_text = TextFormat(
 			"phase: %d - %.3f / %d",
 			t->phase,
 			t->current_time_s,
-			t->total_time_s);
+			t->total_time_s
+		);
 
 		BeginDrawing();
 
 		ClearBackground(RAYWHITE);
-		DrawText(s, 10, 10, 20, BLACK);
+		DrawText(status_text, 10, 10, 20, BLACK);
 
 		EndDrawing();
+
+		MemFree(nullptr);
 		
 		if (t->running)
 			update_timer(t, GetFrameTime());
