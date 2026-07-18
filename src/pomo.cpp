@@ -30,6 +30,12 @@ const int interval_s[3] = {
 	LONG_BREAK_MINUTES * 60
 };
 
+const char* phase_names[3] = {
+	"WORK",
+	"SHORT BREAK",
+	"LONG BREAK"
+};
+
 enum phase
 {
 	work, short_break, long_break
@@ -142,8 +148,8 @@ main (void)
 	while (!WindowShouldClose())
 	{
 		const char* status_text = TextFormat(
-			"phase: %d - %.3f / %d",
-			t->phase,
+			"%s - %0.03f/%d",
+			phase_names[t->phase],
 			t->current_time_s,
 			t->total_time_s
 		);
@@ -155,8 +161,6 @@ main (void)
 
 		EndDrawing();
 
-		MemFree(nullptr);
-		
 		if (t->running)
 			update_timer(t, GetFrameTime());
 	}
