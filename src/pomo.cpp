@@ -4,30 +4,17 @@
 
 #include <raylib.h>
 
-#define FPS_TARGET		60
+const int FPS_TARGET		= 60;
 
-#define WORK_MINUTES		25
-#define SHORT_BREAK_MINUTES	5
-#define LONG_BREAK_MINUTES	30
-
-/*
- * set timer, reset timer, short break, long break
- */
-
-/*
- * so how do i do this ? uhhhh i think i need this to be like
- *  modes for a timer for each phase, and a loop
- *  the loop will be like (work, break [what kind of break]) repeat
- *  yeah that sounds about right
- *  and for like the UI what do i do ? animations, buttons ?
- *
- */
+const float WORK_MINUTES 	= 25;
+const float SHORT_BREAK_MINUTES	= 5;
+const float LONG_BREAK_MINUTES	= 30;
 
 // Durations for Work, Short Break, Long Break
 const int interval_s[3] = {
-	WORK_MINUTES * 60,
-	SHORT_BREAK_MINUTES * 60,
-	LONG_BREAK_MINUTES * 60
+	(int)(WORK_MINUTES * 60),
+	(int)(SHORT_BREAK_MINUTES * 60),
+	(int)(LONG_BREAK_MINUTES * 60)
 };
 
 const char* phase_names[3] = {
@@ -43,11 +30,13 @@ enum phase
 
 struct timer
 {
-	int	total_time_s;
+	Sound	tick_sound;
+	Sound	ring_sound;
 	float	current_time_s;
+	int	total_time_s;
+	int	work_count;
 	phase	phase;
 	bool	running;
-	int	work_count;
 };
 
 timer
@@ -73,7 +62,7 @@ start_timer (timer* t)
 
 	while (t->current_time_s < t->total_time_s)
 	{
-		int sec_ms = 1000;
+		const short sec_ms = 1000;
 		std::this_thread::sleep_for(std::chrono::milliseconds(sec_ms));
 		
 		++(t->current_time_s);
@@ -115,6 +104,13 @@ update_timer (timer* t, float ds)
 
 		t->total_time_s = interval_s[t->phase];
 		t->current_time_s = 0.0;
+
+		// Play ring sound on interval completion
+		if (!IsSoundPlaying(t->ring_sound)) PlaySound(t->ring_sound);
+	}
+	else
+	{
+		if (!IsSoundPlaying(t->tick_sound)) PlaySound(t->tick_sound);
 	}
 }
 
@@ -138,6 +134,11 @@ main (void)
 	const int screen_width = 640;
 	const int screen_height = 480;
 
+	const char* SOUND_TICK_FILE = "./sounds/timertick.ogg";
+	const char* SOUND_RING_FILE = "./sounds/timerring.ogg";
+
+	const char* FONT_FILE = "./fonts/Mx437_IBM_VGA_9x14.ttf";
+
 	timer pomodoro = create_timer();
 	timer* t = &pomodoro;
 	t->running = true;
@@ -145,10 +146,16 @@ main (void)
 	InitWindow(screen_width, screen_height, "pomo");
 	SetTargetFPS(FPS_TARGET);
 
+	Font mono_font = LoadFont(FONT_FILE);
+
+	InitAudioDevice();
+	t->tick_sound = LoadSound(SOUND_TICK_FILE);
+	t->ring_sound = LoadSound(SOUND_RING_FILE);
+
 	while (!WindowShouldClose())
 	{
 		const char* status_text = TextFormat(
-			"%s - %0.03f/%d",
+			"%s - %.3f/%d",
 			phase_names[t->phase],
 			t->current_time_s,
 			t->total_time_s
@@ -157,7 +164,16 @@ main (void)
 		BeginDrawing();
 
 		ClearBackground(RAYWHITE);
-		DrawText(status_text, 10, 10, 20, BLACK);
+
+		Vector2 text_pos = {10, 10};
+		DrawTextEx(
+			mono_font,
+			status_text,
+			text_pos,
+			14.25,
+			0.0,
+			BLACK
+		);
 
 		EndDrawing();
 
