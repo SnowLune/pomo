@@ -1,0 +1,2 @@
+---
+Checks: 'cppcoreguidelines-*,clang-analyzer-*,clang-analyzer-cplusplus*'
