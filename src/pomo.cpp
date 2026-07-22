@@ -105,7 +105,7 @@ update_timer (Timer* t, float ds, Sounds* sounds)
 {
 	if (t->paused)
 	{
-		if(IsMouseButtonPressed(0))
+		if (IsMouseButtonPressed(0))
 		{
 			t->paused = false;
 			sounds->ring_muted = false;
@@ -186,6 +186,8 @@ main (void)
 
 	const char* font_file = "./fonts/JetBrainsMonoNerd.ttf";
 
+	// Setup and Init
+	SetConfigFlags(FLAG_WINDOW_ALWAYS_RUN);
 	InitAudioDevice();
 	InitWindow(screen_width, screen_height, "pomo");
 	SetTargetFPS(fps_target);
