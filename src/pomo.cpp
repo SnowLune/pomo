@@ -37,6 +37,7 @@ struct Sounds
 	float	tick_vol;
 	float	ring_vol;
 	bool	tick_muted;
+	bool	ring_muted;
 };
 
 struct Timer
@@ -49,6 +50,7 @@ struct Timer
 	const char* 	phase_name;
 	Phase		phase;
 	bool		running;
+	bool		paused;
 };
 
 Sounds
@@ -57,12 +59,15 @@ create_sounds (Sound tick, Sound ring)
 	const float tick_vol = 0.1;
 	const float ring_vol = 1.0;
 	const bool tick_muted = false;
+	const bool ring_muted = false;
+
 	Sounds sounds {};
 	sounds.tick = tick;
 	sounds.ring = ring;
 	sounds.tick_vol = tick_vol;
 	sounds.ring_vol = ring_vol;
 	sounds.tick_muted = tick_muted;
+	sounds.ring_muted = ring_muted;
 	
 	SetSoundVolume(sounds.tick, sounds.tick_vol);
 	SetSoundVolume(sounds.ring, sounds.ring_vol);
@@ -89,6 +94,7 @@ create_timer ()
 	// Initialize
 	set_timer(&t, Phase::work);
 	t.running = false;
+	t.paused = false;
 	t.work_count = 0;
 
 	return t;
@@ -97,6 +103,32 @@ create_timer ()
 void
 update_timer (Timer* t, float ds, Sounds* sounds)
 {
+	if (t->paused)
+	{
+		if(IsMouseButtonPressed(0))
+		{
+			t->paused = false;
+			sounds->ring_muted = false;
+		}
+		else if (	IsMouseButtonPressed(1) &&
+				IsSoundPlaying(sounds->ring)	)
+		{
+			StopSound(sounds->ring);
+			sounds->ring_muted = true;
+		}
+
+		// Play looped ring sound on interval completion
+		if (	t->paused &&
+			!sounds->ring_muted &&
+			!IsSoundPlaying(sounds->ring)	)
+		{
+			PlaySound(sounds->ring);
+		}
+		else if (!t->paused && IsSoundPlaying(sounds->ring))
+			StopSound(sounds->ring);
+		return;
+	}
+
 	t->current_time_s += ds;
 	
 	if ((int)t->current_time_s >= t->total_time_s)
@@ -113,13 +145,18 @@ update_timer (Timer* t, float ds, Sounds* sounds)
 		else
 			set_timer(t, Phase::work);
 
-		// Play ring sound on interval completion
-		if (!IsSoundPlaying(sounds->ring)) PlaySound(sounds->ring);
+		t->paused = true;
+		if (IsSoundPlaying(sounds->tick))
+			StopSound(sounds->tick);
 	}
 	else
 	{
-		if (!sounds->tick_muted && !IsSoundPlaying(sounds->tick))
+		if (	!sounds->tick_muted &&
+			!IsSoundPlaying(sounds->tick) &&
+			!t->paused	)
+		{
 			PlaySound(sounds->tick);
+		}
 	}
 }
 
