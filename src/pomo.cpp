@@ -4,7 +4,7 @@
 #include <thread>
 #include <string>
 
-#include <raylib.h>
+#include "raylib.h"
 
 const int fps_target = 60;
 
@@ -30,18 +30,45 @@ enum class Phase
 	work = 0, short_break = 1, long_break = 2
 };
 
+struct Sounds
+{
+	Sound	tick;
+	Sound	ring;
+	float	tick_vol;
+	float	ring_vol;
+	bool	tick_muted;
+};
+
 struct Timer
 {
-	Sound	tick_sound;
-	Sound	ring_sound;
+	Sound*		tick_sound;
+	Sound*		ring_sound;
 	float		current_time_s;
 	int		total_time_s;
 	int		work_count;
 	const char* 	phase_name;
 	Phase		phase;
-	bool		tick_muted;
 	bool		running;
 };
+
+Sounds
+create_sounds (Sound tick, Sound ring)
+{
+	const float tick_vol = 0.1;
+	const float ring_vol = 1.0;
+	const bool tick_muted = false;
+	Sounds sounds {};
+	sounds.tick = tick;
+	sounds.ring = ring;
+	sounds.tick_vol = tick_vol;
+	sounds.ring_vol = ring_vol;
+	sounds.tick_muted = tick_muted;
+	
+	SetSoundVolume(sounds.tick, sounds.tick_vol);
+	SetSoundVolume(sounds.ring, sounds.ring_vol);
+
+	return sounds;
+}
 
 void
 set_timer (Timer* t, Phase phase)
@@ -55,7 +82,7 @@ set_timer (Timer* t, Phase phase)
 }
 
 Timer
-create_timer (const char* tick_sndfile, const char* ring_sndfile)
+create_timer ()
 {
 	Timer t {};
 	
@@ -63,23 +90,12 @@ create_timer (const char* tick_sndfile, const char* ring_sndfile)
 	set_timer(&t, Phase::work);
 	t.running = false;
 	t.work_count = 0;
-	
-	// Load Sounds
-	if (IsAudioDeviceReady())
-	{
-		t.tick_sound = LoadSound(tick_sndfile);
-		t.ring_sound = LoadSound(ring_sndfile);
-	}
-	t.tick_muted = false;
-
-	const float tick_vol = 0.1;
-	SetSoundVolume(t.tick_sound, tick_vol);
 
 	return t;
 }
 
 void
-update_timer (Timer* t, float ds)
+update_timer (Timer* t, float ds, Sounds* sounds)
 {
 	t->current_time_s += ds;
 	
@@ -98,12 +114,12 @@ update_timer (Timer* t, float ds)
 			set_timer(t, Phase::work);
 
 		// Play ring sound on interval completion
-		if (!IsSoundPlaying(t->ring_sound)) PlaySound(t->ring_sound);
+		if (!IsSoundPlaying(sounds->ring)) PlaySound(sounds->ring);
 	}
 	else
 	{
-		if (!t->tick_muted && !IsSoundPlaying(t->tick_sound))
-			PlaySound(t->tick_sound);
+		if (!sounds->tick_muted && !IsSoundPlaying(sounds->tick))
+			PlaySound(sounds->tick);
 	}
 }
 
@@ -114,9 +130,9 @@ stop_timer (Timer* t)
 }
 
 void
-mute_timer_tick (Timer* t)
+mute_timer_tick (Sounds* sounds)
 {
-	t->tick_muted = !t->tick_muted;
+	sounds->tick_muted = !sounds->tick_muted;
 }
 
 int
@@ -139,7 +155,10 @@ main (void)
 
 	Font mono_font = LoadFont(font_file);
 	
-	Timer pomodoro = create_timer(sound_tick_file, sound_ring_file);
+	Sounds sounds = create_sounds(	LoadSound(sound_tick_file),
+					LoadSound(sound_ring_file)	);
+
+	Timer pomodoro = create_timer();
 	Timer* t = &pomodoro;
 	t->running = true;
 
@@ -168,7 +187,7 @@ main (void)
 		EndDrawing();
 
 		if (t->running)
-			update_timer(t, GetFrameTime());
+			update_timer(t, GetFrameTime(), &sounds);
 	}
 
 	CloseWindow();
