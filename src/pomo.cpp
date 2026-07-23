@@ -6,9 +6,6 @@
 
 #include "raylib.h"
 
-#define RAYGUI_IMPLEMENTATION
-#include "raygui.h"
-
 const int fps_target = 60;
 
 constexpr int work_interval_s =		25 * 60;
@@ -80,6 +77,13 @@ create_sounds (Sound tick, Sound ring)
 }
 
 void
+mute_timer_tick (Sounds* sounds)
+{
+	sounds->tick_muted = !sounds->tick_muted;
+}
+
+
+void
 set_timer (Timer* t, Phase phase)
 {
 	const int phase_int = static_cast<int>(phase);
@@ -90,18 +94,10 @@ set_timer (Timer* t, Phase phase)
 	t->current_time_s = 0.0;
 }
 
-Timer
-create_timer ()
+void
+stop_timer (Timer* t)
 {
-	Timer t {};
-	
-	// Initialize
-	set_timer(&t, Phase::work);
-	t.running = false;
-	t.paused = false;
-	t.work_count = 0;
-
-	return t;
+	t->running = false;
 }
 
 void
@@ -164,16 +160,18 @@ update_timer (Timer* t, float ds, Sounds* sounds)
 	}
 }
 
-void
-stop_timer (Timer* t)
+Timer
+create_timer ()
 {
-	t->running = false;
-}
+	Timer t {};
+	
+	// Initialize
+	set_timer(&t, Phase::work);
+	t.running = false;
+	t.paused = false;
+	t.work_count = 0;
 
-void
-mute_timer_tick (Sounds* sounds)
-{
-	sounds->tick_muted = !sounds->tick_muted;
+	return t;
 }
 
 // void
@@ -214,11 +212,10 @@ main (void)
 
 	while (!WindowShouldClose())
 	{
-		std::string status_text
-			= std::format(	"{} - {:8.2f}/{}",
-					t->phase_name,
-					t->current_time_s,
-					t->total_time_s	);
+		std::string status_text = std::format(	"{} - {:8.2f}/{}",
+							t->phase_name,
+							t->current_time_s,
+							t->total_time_s	);
 
 		BeginDrawing();
 
