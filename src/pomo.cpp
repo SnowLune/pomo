@@ -6,6 +6,9 @@
 
 #include "raylib.h"
 
+#define RAYGUI_IMPLEMENTATION
+#include "raygui.h"
+
 const int fps_target = 60;
 
 constexpr int work_interval_s =		25 * 60;
@@ -48,6 +51,7 @@ struct Timer
 	int		total_time_s;
 	int		work_count;
 	const char* 	phase_name;
+	const char* 	task;
 	Phase		phase;
 	bool		running;
 	bool		paused;
@@ -171,6 +175,13 @@ mute_timer_tick (Sounds* sounds)
 {
 	sounds->tick_muted = !sounds->tick_muted;
 }
+
+// void
+// set_task (Timer* t)
+// {
+// 	if (!t->paused) t->paused = true;
+// 	// implement this
+// }
 
 int
 main (void)

@@ -1,2 +1,5 @@
 ---
-Checks: 'cppcoreguidelines-*,clang-analyzer-*,clang-analyzer-cplusplus*'
+UseColor: true
+HeaderFilterRegex: "src/.*"
+ExcludeHeaderFilterRegex: "deps/.*"
+Checks: "cppcoreguidelines-*,clang-analyzer-*,clang-analyzer-cplusplus*"
